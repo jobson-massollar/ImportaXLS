@@ -51,16 +51,16 @@ abstract class Command(commandName: String): CliktCommand(name = commandName) {
             return;
         }
 
-        transaction {
-            SchemaUtils.create(
-                Alunos,
-                Departamentos,
-                Disciplinas,
-                Inscricoes,
-                ItensHistorico,
-                ItensDiario,
-            )
-        }
+//        transaction {
+//            SchemaUtils.create(
+//                Alunos,
+//                Departamentos,
+//                Disciplinas,
+//                Inscricoes,
+//                ItensHistorico,
+//                ItensDiario,
+//            )
+//        }
 
         DAOFactory.register(ExposedDAOFactory)
 

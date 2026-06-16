@@ -101,18 +101,18 @@ class ItemHistoricoExposedDAO: IItemHistoricoDAO{
                 shouldReturnGeneratedValues = false)
                 {dto ->
                     this[ItensHistorico.id] = dto.id!!
-                    this[matricula] = dto.matricula
-                    this[ano] = dto.ano
-                    this[periodo] = dto.periodo
-                    this[descPeriodo] = dto.descPeriodo
-                    this[versao] = dto.versao
-                    this[codigo] = dto.codigo
-                    this[nome] = dto.nome
-                    this[situacao] = dto.situacao
-                    this[descricao] = dto.descricao
-                    this[nota] = dto.nota
-                    this[creditos] = dto.creditos
-                    this[horas] = dto.horas
+                    this[ItensHistorico.matricula] = dto.matricula
+                    this[ItensHistorico.ano] = dto.ano
+                    this[ItensHistorico.periodo] = dto.periodo
+                    this[ItensHistorico.descPeriodo] = dto.descPeriodo
+                    this[ItensHistorico.versao] = dto.versao
+                    this[ItensHistorico.codigo] = dto.codigo
+                    this[ItensHistorico.nome] = dto.nome
+                    this[ItensHistorico.situacao] = dto.situacao
+                    this[ItensHistorico.descricao] = dto.descricao
+                    this[ItensHistorico.nota] = dto.nota
+                    this[ItensHistorico.creditos] = dto.creditos
+                    this[ItensHistorico.horas] = dto.horas
                 }
         }
     }
