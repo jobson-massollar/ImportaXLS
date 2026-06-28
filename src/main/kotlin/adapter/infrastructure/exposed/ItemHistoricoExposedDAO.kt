@@ -1,7 +1,5 @@
 package adapter.infrastructure.exposed
 
-import adapter.infrastructure.exposed.Disciplinas.creditos
-import adapter.infrastructure.exposed.Disciplinas.horas
 import adapter.infrastructure.exposed.ItensHistorico.ano
 import adapter.infrastructure.exposed.ItensHistorico.codigo
 import adapter.infrastructure.exposed.ItensHistorico.descPeriodo
@@ -9,6 +7,8 @@ import adapter.infrastructure.exposed.ItensHistorico.descricao
 import adapter.infrastructure.exposed.ItensHistorico.matricula
 import adapter.infrastructure.exposed.ItensHistorico.nome
 import adapter.infrastructure.exposed.ItensHistorico.nota
+import adapter.infrastructure.exposed.ItensHistorico.creditos
+import adapter.infrastructure.exposed.ItensHistorico.horas
 import adapter.infrastructure.exposed.ItensHistorico.periodo
 import adapter.infrastructure.exposed.ItensHistorico.situacao
 import adapter.infrastructure.exposed.ItensHistorico.versao
@@ -20,7 +20,7 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.update
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
-import services.domain.persistence.IItemHistoricoDAO
+import services.domain.persistence.IDAO.IItemHistoricoDAO
 import services.domain.persistence.ItemHistoricoDTO
 
 class ItemHistoricoExposedDAO: IItemHistoricoDAO{

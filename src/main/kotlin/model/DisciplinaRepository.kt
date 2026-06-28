@@ -1,6 +1,8 @@
-package services.domain.persistence
+package model
 
-import model.Disciplina
+import services.domain.persistence.DAOFactory
+import services.domain.persistence.DisciplinaDTO
+import services.domain.persistence.IDAO.IDisciplinaDAO
 
 class DisciplinaRepository: Repository<Disciplina, IDisciplinaDAO, DisciplinaDTO>() {
 

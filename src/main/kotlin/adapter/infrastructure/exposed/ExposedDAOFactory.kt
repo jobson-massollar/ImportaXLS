@@ -6,11 +6,12 @@ import kotlin.reflect.KClass
 object ExposedDAOFactory : IDAOFactory {
     override fun <T : IDAO<*>> get(c: KClass<in T>): T =
         when (c) {
-            IDisciplinaDAO::class -> DisciplinaExposedDAO() as T
-            IAlunoDAO::class -> AlunoExposedDAO() as T
-            IItemHistoricoDAO::class -> ItemHistoricoExposedDAO() as T
-            IInscricaoDAO::class -> InscricaoExposedDAO() as T
-            IItemDiarioDAO::class -> ItemDiarioExposedDAO() as T
+            IDAO.IDisciplinaDAO::class -> DisciplinaExposedDAO() as T
+            IDAO.IAlunoDAO::class -> AlunoExposedDAO() as T
+            IDAO.IItemHistoricoDAO::class -> ItemHistoricoExposedDAO() as T
+            IDAO.IInscricaoDAO::class -> InscricaoExposedDAO() as T
+            IDAO.IItemDiarioDAO::class -> ItemDiarioExposedDAO() as T
+            IDAO.IPreRequisitoDAO::class -> PreRequisitoExposedDAO() as T
             else -> throw IllegalArgumentException("Invalid DAO class " + c.java.name)
         }
 
@@ -21,5 +22,6 @@ object ExposedDAOFactory : IDAOFactory {
             DAOFactory.Type.HISTORICO -> ItemHistoricoExposedDAO() as T
             DAOFactory.Type.INSCRICAO -> InscricaoExposedDAO() as T
             DAOFactory.Type.DIARIO -> ItemDiarioExposedDAO() as T
+            DAOFactory.Type.PRE_REQUISITO -> PreRequisitoExposedDAO() as T
         }
 }

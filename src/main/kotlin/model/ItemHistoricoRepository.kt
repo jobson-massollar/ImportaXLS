@@ -1,6 +1,8 @@
-package services.domain.persistence
+package model
 
-import model.ItemHistorico
+import services.domain.persistence.DAOFactory
+import services.domain.persistence.IDAO.IItemHistoricoDAO
+import services.domain.persistence.ItemHistoricoDTO
 
 class ItemHistoricoRepository: Repository<ItemHistorico, IItemHistoricoDAO, ItemHistoricoDTO>() {
 

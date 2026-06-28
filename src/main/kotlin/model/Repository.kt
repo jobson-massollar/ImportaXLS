@@ -1,7 +1,6 @@
-package services.domain.persistence
+package model
 
-import model.Entity
-import model.EntityDTO
+import services.domain.persistence.IDAO
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
 import kotlin.uuid.Uuid

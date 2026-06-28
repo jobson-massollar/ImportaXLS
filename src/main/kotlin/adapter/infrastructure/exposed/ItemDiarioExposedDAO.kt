@@ -15,7 +15,7 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.update
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
-import services.domain.persistence.IItemDiarioDAO
+import services.domain.persistence.IDAO.IItemDiarioDAO
 import services.domain.persistence.ItemDiarioDTO
 
 class ItemDiarioExposedDAO: IItemDiarioDAO {

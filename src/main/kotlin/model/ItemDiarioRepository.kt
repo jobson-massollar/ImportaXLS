@@ -1,6 +1,8 @@
-package services.domain.persistence
+package model
 
-import model.ItemDiario
+import services.domain.persistence.DAOFactory
+import services.domain.persistence.IDAO.IItemDiarioDAO
+import services.domain.persistence.ItemDiarioDTO
 
 class ItemDiarioRepository: Repository<ItemDiario, IItemDiarioDAO, ItemDiarioDTO>() {
 

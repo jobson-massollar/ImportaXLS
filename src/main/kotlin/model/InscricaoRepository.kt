@@ -1,6 +1,8 @@
-package services.domain.persistence
+package model
 
-import model.Inscricao
+import services.domain.persistence.DAOFactory
+import services.domain.persistence.IDAO.IInscricaoDAO
+import services.domain.persistence.InscricaoDTO
 
 class InscricaoRepository: Repository<Inscricao, IInscricaoDAO, InscricaoDTO>() {
 

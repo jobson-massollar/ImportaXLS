@@ -18,7 +18,7 @@ import org.jetbrains.exposed.v1.jdbc.update
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import services.domain.persistence.DisciplinaDTO
-import services.domain.persistence.IDisciplinaDAO
+import services.domain.persistence.IDAO.IDisciplinaDAO
 
 class DisciplinaExposedDAO: IDisciplinaDAO {
     override fun insert(dto: DisciplinaDTO) {

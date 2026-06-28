@@ -4,11 +4,10 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.format.char
 import model.*
-import services.domain.persistence.*
 import services.domain.spreadsheet.Spreadsheet
 
 enum class Operation {
-    ALUNO, DADOS_ALUNO, HISTORICO, INSCRICAO, DISCIPLINA, DIARIO, LIST
+    ALUNO, DADOS_ALUNO, HISTORICO, INSCRICAO, DISCIPLINA, DIARIO, PRE_REQUISITO, LIST
 }
 
 private fun <T> String.transform(block: String.() -> T): T? = if (this == "NULL" || this.isEmpty() || this.isBlank() ) null else this.block()
@@ -34,6 +33,7 @@ class SpreadsheetService(val spreadSheet: Spreadsheet) {
             Operation.HISTORICO -> readItensHistorico().forEach { (repo as ItemHistoricoRepository).batchInsert(it) }
             Operation.INSCRICAO -> readInscricoes().forEach { (repo as InscricaoRepository).batchInsert(it) }
             Operation.DISCIPLINA -> readDisciplinas().forEach { (repo as DisciplinaRepository).batchInsert(it) }
+            Operation.PRE_REQUISITO -> readPreRequisitos().forEach { (repo as PreRequisitoRepository).batchInsert(it) }
             Operation.DIARIO -> {
                 val disciplinas = RepositoryFactory.get(DisciplinaRepository::class).findAll()
                 readDiario(depto).forEach { itemDiario ->
@@ -128,6 +128,18 @@ class SpreadsheetService(val spreadSheet: Spreadsheet) {
                 line[map[8]].transform { this.replace(',','.').toFloat() },
                 line[map[9]].transform(0) { this.toInt() },
                 line[map[10]].transform(0) { this.toInt() })
+        }
+    }
+
+    private fun readPreRequisitos(): Sequence<PreRequisito> = sequence {
+        val preRequisitoXLS = listOf(2, 4, 6)
+
+        readSpreadsheet(12,preRequisitoXLS) { line, map ->
+            PreRequisito.of(
+                line[map[0]],
+                line[map[1]],
+                line[map[2]]
+            )
         }
     }
 

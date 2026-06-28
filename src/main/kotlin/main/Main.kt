@@ -9,6 +9,7 @@ fun main(args: Array<String>) = App()
         DadosAluno(),
         Disciplina(),
         Historico(),
+        PreRequisitos(),
         Inscricao(),
         Diario(),
         Lista())

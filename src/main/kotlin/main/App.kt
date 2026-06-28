@@ -1,13 +1,7 @@
 package main
 
 import adapter.infrastructure.excel.Excel
-import adapter.infrastructure.exposed.Alunos
-import adapter.infrastructure.exposed.Departamentos
-import adapter.infrastructure.exposed.Disciplinas
 import adapter.infrastructure.exposed.ExposedDAOFactory
-import adapter.infrastructure.exposed.Inscricoes
-import adapter.infrastructure.exposed.ItensDiario
-import adapter.infrastructure.exposed.ItensHistorico
 import adapter.infrastructure.exposed.connectToDatabase
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
@@ -20,19 +14,18 @@ import com.github.ajalt.clikt.parameters.types.choice
 import com.github.ajalt.clikt.parameters.types.path
 import model.Entity
 import model.EntityDTO
-import org.jetbrains.exposed.v1.jdbc.SchemaUtils
-import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import services.application.Operation
 import services.application.SpreadsheetService
-import services.domain.persistence.AlunoRepository
+import model.AlunoRepository
 import services.domain.persistence.DAOFactory
-import services.domain.persistence.DisciplinaRepository
+import model.DisciplinaRepository
 import services.domain.persistence.IDAO
-import services.domain.persistence.InscricaoRepository
-import services.domain.persistence.ItemDiarioRepository
-import services.domain.persistence.ItemHistoricoRepository
-import services.domain.persistence.Repository
-import services.domain.persistence.RepositoryFactory
+import model.InscricaoRepository
+import model.ItemDiarioRepository
+import model.ItemHistoricoRepository
+import model.PreRequisitoRepository
+import model.Repository
+import model.RepositoryFactory
 import java.util.Locale.getDefault
 import kotlin.io.path.pathString
 
@@ -70,6 +63,7 @@ abstract class Command(commandName: String): CliktCommand(name = commandName) {
             Operation.INSCRICAO -> RepositoryFactory.get(InscricaoRepository::class)
             Operation.DISCIPLINA -> RepositoryFactory.get(DisciplinaRepository::class)
             Operation.DIARIO -> RepositoryFactory.get(ItemDiarioRepository::class)
+            Operation.PRE_REQUISITO -> RepositoryFactory.get(PreRequisitoRepository::class)
             Operation.LIST -> null
         }
 
@@ -127,6 +121,16 @@ class Disciplina: DBCommand("disciplinas") {
 
     override fun run() {
         run(Operation.DISCIPLINA, delete)
+    }
+
+}
+
+class PreRequisitos: DBCommand("pre-requisitos") {
+
+    override fun help(context: Context) = "Import data to pre-requisitos table"
+
+    override fun run() {
+        run(Operation.PRE_REQUISITO, delete)
     }
 
 }

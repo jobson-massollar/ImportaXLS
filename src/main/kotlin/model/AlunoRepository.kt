@@ -1,7 +1,8 @@
-package services.domain.persistence
+package model
 
-import model.Aluno
-import model.DadosAluno
+import services.domain.persistence.AlunoDTO
+import services.domain.persistence.DAOFactory
+import services.domain.persistence.IDAO.IAlunoDAO
 
 class AlunoRepository: Repository<Aluno, IAlunoDAO, AlunoDTO>() {
 

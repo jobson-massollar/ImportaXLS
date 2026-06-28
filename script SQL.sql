@@ -58,6 +58,21 @@ CREATE INDEX disciplinas_codigo ON public.disciplinas USING btree (codigo);
 
 /*-------------------------------------------------------------------*/
 
+DROP TABLE pre_requisitos;
+
+CREATE TABLE pre_requisitos (
+	id uuid NOT NULL,
+	versao varchar(6) NOT NULL,
+	codigo varchar(10) NOT NULL,
+	codigo_pre_req varchar(10) NOT NULL,
+	CONSTRAINT pre_requisitos_pkey PRIMARY KEY (id),
+	CONSTRAINT idx_pre_requisitos_versao_codigo_codigo_pre_req UNIQUE (versao, codigo, codigo_pre_req)
+);
+
+CREATE INDEX pre_requisitos_versao_codigo ON public.pre_requisitos USING btree (versao, codigo);
+
+/*-------------------------------------------------------------------*/
+
 DROP TABLE inscricoes;
 
 CREATE TABLE inscricoes (
@@ -123,37 +138,133 @@ CREATE INDEX itens_historico_versao_codigo_idx ON public.itens_historico USING b
 
 /*-------------------------------------------------------------------*/
 
-drop view vw_disciplinas;
+DROP TABLE extensoes_prazo;
 
-create view vw_disciplinas as
-select versao, codigo, nome, tipo, sum(horas) as horas, sum(creditos) as creditos
-from disciplinas
-group by versao, codigo, nome, tipo;
+CREATE TABLE public.extensoes_prazo (
+	id uuid NOT NULL,
+	matricula varchar(14) NOT NULL,
+	prazo int4 NOT NULL,
+	CONSTRAINT extensoes_prazo_matricula_unique UNIQUE (matricula),
+	CONSTRAINT extensoes_prazo_pkey PRIMARY KEY (id)
+);
 
 /*-------------------------------------------------------------------*/
+
+DROP TABLE disciplinas_equivalentes;
+
+CREATE TABLE public.disciplinas_equivalentes (
+	id uuid NOT NULL,
+	versao varchar(6) NOT NULL,
+	codigo varchar(10) NOT NULL,
+	nome varchar(200) NOT NULL,
+	CONSTRAINT disciplinas_equivalentes_pkey PRIMARY KEY (id)
+);
+
+CREATE UNIQUE INDEX idx_disciplinas_equivalentes_versao_codigo ON disciplinas_equivalentes (versao, codigo);
+
+insert into disciplinas_equivalentes(id, versao, codigo, nome) values('00b9cfcf-2083-44a5-bced-a9b1afe67db0', '2023/2', 'TMT001', 'CÁLCULO-I');
+insert into disciplinas_equivalentes(id, versao, codigo, nome) values('a32335a2-7d4f-4352-8184-3f54ae075bf6', '2023/2', 'TMT002', 'CÁLCULO II');
+insert into disciplinas_equivalentes(id, versao, codigo, nome) values('4b360a80-4df2-4173-b656-70e501a81470', '2023/2', 'TMT005', 'CÁLCULO-0');
+insert into disciplinas_equivalentes(id, versao, codigo, nome) values('3fd977a1-8a69-4d88-b456-8901fbf56a92', '2023/2', 'TMT015', 'CÁLCULO-2');
+insert into disciplinas_equivalentes(id, versao, codigo, nome) values('cbc50c52-91f2-4078-8d68-43fddb2b3d41', '2023/2', 'TIN0202', 'PROGRAMAÇÃO II');
+
+/*----------------------------------------------------------------------------------
+ Disciplinas únicas com somatório de horas e créditos
+ Essa view permite somar as horas de teoria e prática das disciplinas
+ ----------------------------------------------------------------------------------*/
+
+drop view vw_disciplinas;
+
+create or replace view vw_disciplinas as
+select versao, codigo, nome, periodo, sum(creditos) as creditos, sum(horas) as horas, tipo
+from disciplinas
+group by versao, codigo, nome, periodo, tipo;
+
+/*----------------------------------------------------------------------------------
+ Alunos com prazo de extensão e trancamentos
+ ----------------------------------------------------------------------------------*/
+
+drop view vw_alunos;
+
+create or replace view vw_alunos as
+select a.*, coalesce(T1.trancamentos, 0) as trancamentos, coalesce(T2.prazo, 0) as prazo_extensao
+from alunos a
+left join (
+    select ih.matricula, count(*) as trancamentos
+	from itens_historico ih 
+	where codigo = 'TRT0001'
+	group by ih.matricula
+) T1 on T1.matricula = a.matricula
+left join extensoes_prazo T2 on T2.matricula = a.matricula;
+
+/*----------------------------------------------------------------------------------
+ Alunos com matrícula ativa
+ ----------------------------------------------------------------------------------*/
 
 drop view vw_alunos_ativos;
 
-create view vw_alunos_ativos as
-select *
-from alunos
-where dt_evasao is null and left(evasao, 3) <> 'ABA';
+create or replace view vw_alunos_ativos as
+select va.*
+from vw_alunos va
+where va.dt_evasao is null and left(va.evasao, 3) <> 'ABA';
+
+/*----------------------------------------------------------------------------------
+ Histórico com o tipo da disciplina:
+ Obrigatória
+ Complementar
+ Eletiva
+ Antiga - obrigatória ou optativa da grade antiga (disciplina cursada na grade antiga)
+ ----------------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------------
+ Alunos ativos e disciplinas cursadas
+ ----------------------------------------------------------------------------------*/
+
+drop view vw_disciplinas_cursadas;
+
+create or replace view vw_disciplinas_cursadas as
+select h.*
+from itens_historico h
+inner join vw_alunos_ativos a on a.matricula = h.matricula
+left join vw_disciplinas d on h.versao = d.versao  and h.codigo = d.codigo
+where (h.situacao = 1 or h.situacao = 4 or h.situacao = 7 or h.situacao = 8 or h.situacao = 11);
+
+/*----------------------------------------------------------------------------------
+ Alunos e disciplinas obrigatórias faltantes
+ ----------------------------------------------------------------------------------*/
+
+drop view vw_obrigatorias_faltantes;
+
+-- create or replace view vw_obrigatorias_faltantes as
+-- select a.matricula, d.*
+-- from vw_disciplinas d
+-- inner join vw_alunos_ativos a on a.versao = d.versao and d.tipo = 'Obrigatória'
+-- left join (
+-- select vdc.*
+-- from vw_disciplinas_cursadas vdc
+-- where vdc.tipo = 'Obrigatória') T on a.matricula = T.matricula and d.versao = T.versao and d.codigo = T.codigo
+-- where T.codigo is null;
+
+create or replace view vw_obrigatorias_faltantes as
+select a.matricula, d.*
+from vw_disciplinas d
+inner join vw_alunos_ativos a on a.versao = d.versao and d.tipo = 'Obrigatória'
+left join (
+select h.*
+from itens_historico h
+inner join vw_alunos_ativos a on a.matricula = h.matricula
+left join vw_disciplinas d on h.versao = d.versao  and h.codigo = d.codigo
+where (h.situacao = 1 or h.situacao = 4 or h.situacao = 7 or h.situacao = 8 or h.situacao = 11) and 
+      h.tipo = 'Obrigatória') T on a.matricula = T.matricula and d.versao = T.versao and d.codigo = T.codigo
+where T.codigo is null;
+
 
 /*-------------------------------------------------------------------*/
 
-drop view vw_itens_historico;
-
-create view vw_itens_historico as
-select h.*, 
-case
-  when h.versao = '2023/2' and left(h.codigo, 3) = 'ATC' then 'Complementar' 
-  when d1.tipo is not null then d1.tipo 
-  when d2.tipo is not null then 'Antiga' 
-  else null 
-end as tipo
-from itens_historico h
-left join vw_disciplinas d1 on h.versao = d1.versao and h.codigo = d1.codigo
-left join vw_disciplinas d2 on d2.versao = case when h.versao = '2023/2' then '2008/1' else null end and h.codigo = d2.codigo;
+update itens_historico ih set horas = 90 where ih.codigo = 'ATC0021';
+update itens_historico ih set horas = 180 where ih.codigo = 'ATC0010';
+update itens_historico ih set horas = 45 where ih.codigo = 'ATC0031';
+update itens_historico ih set horas = 60 where ih.codigo = 'ATC0100';
 
 /*----------------------------------------------------------------------------------
  Alunos inscritos em disciplinas diferentes da versão do seu currículo
@@ -314,19 +425,15 @@ order by d.codigo;
  Lista de matrícula e quantitativo/horas de obrigatórias, optativas e eletivas
  (somente alunos ativos)
  ----------------------------------------------------------------------------------*/
-with
-HISTORICO as (
-select h.*
-from vw_itens_historico h
-inner join vw_alunos_ativos a on a.matricula = h.matricula
-left join vw_disciplinas d on h.versao = d.versao  and h.codigo = d.codigo
-where (h.situacao = 1 or h.situacao = 7 or h.situacao = 8 or h.situacao = 11)
-)
 select a.matricula, a.versao,
-coalesce(T1.qtd,0)+coalesce(T2.qtd,0) as qtd_obrig, coalesce(T1.horas,0)+coalesce(T2.horas,0)  as horas_obrig, 
-coalesce(T3.qtd,0) as qtd_opt, coalesce(T3.horas,0) as horas_opt,
-coalesce(T4.qtd,0) as qtd_elet, coalesce(T4.horas,0) as horas_elet,
-coalesce(T2.qtd,0) as qtd_compl, coalesce(T2.horas,0) as horas_compl,
+coalesce(T1.qtd,0),-- +coalesce(T2.qtd,0) as qtd_obrig, 
+coalesce(T1.horas,0),-- +coalesce(T2.horas,0)  as horas_obrig, 
+coalesce(T3.qtd,0) as qtd_opt, 
+coalesce(T3.horas,0) as horas_opt,
+coalesce(T4.qtd,0) as qtd_elet, 
+coalesce(T4.horas,0) as horas_elet,
+coalesce(T2.qtd,0) as qtd_compl, 
+coalesce(T2.horas,0) as horas_compl,
 coalesce(T1.horas,0)+coalesce(T2.horas,0)+coalesce(T3.horas,0) as total,
 coalesce(T5.qtd,0) as obrig_faltantes
 --case
@@ -337,78 +444,90 @@ coalesce(T5.qtd,0) as obrig_faltantes
 from vw_alunos_ativos a
 left join
 (select h.matricula, count(*) as qtd, sum(h.horas) as horas
-from HISTORICO h
+from vw_disciplinas_cursadas h
 where h.tipo = 'Obrigatória'
 group by h.matricula) T1 on a.matricula = T1.matricula
 left join
 (select h.matricula, count(*) as qtd, sum(h.horas) as horas
-from HISTORICO h
+from vw_disciplinas_cursadas h
 where h.tipo = 'Complementar'
 group by h.matricula) T2 on a.matricula = T2.matricula
 left join 
 (select h.matricula, count(*) as qtd, sum(h.horas) as horas
-from HISTORICO h
+from vw_disciplinas_cursadas h
 where h.tipo = 'Optativa'
 group by h.matricula) T3 on a.matricula = T3.matricula
 left join
 (select h.matricula, count(*) as qtd, sum(h.horas) as horas
-from HISTORICO h
+from vw_disciplinas_cursadas h
 where h.tipo is null
 group by h.matricula) T4 on a.matricula = T4.matricula
 left join
-(select a.matricula, count(*) as qtd
-from vw_disciplinas d
-inner join vw_alunos_ativos a on a.versao = d.versao and d.tipo = 'Obrigatória'
-left join (
-select h.*
-from vw_itens_historico h
-where (h.situacao = 1 or h.situacao = 7 or h.situacao = 8 or h.situacao = 11) 
-and h.tipo = 'Obrigatória') T on a.matricula = T.matricula and d.versao = T.versao and d.codigo = T.codigo
-where T.codigo is null
-group by a.matricula) T5 on a.matricula = T5.matricula
+(select obf.matricula, count(*) as qtd
+from vw_obrigatorias_faltantes obf
+group by obf.matricula) T5 on a.matricula = T5.matricula
 order by a.matricula;
 
-/*----------------------------------------------------------------------------------
- Lista de matrículas e disciplinas obrigatórias que ainda faltam ser cursadas
- ----------------------------------------------------------------------------------*/
-select a.matricula, a.nome, d.*
-from vw_disciplinas d
-inner join vw_alunos_ativos a on a.versao = d.versao and d.tipo = 'Obrigatória'
-left join (
-select h.*
-from vw_itens_historico h
-where (h.situacao = 1 or h.situacao = 7 or h.situacao = 8 or h.situacao = 11) 
-and h.tipo = 'Obrigatória') T on a.matricula = T.matricula and d.versao = T.versao and d.codigo = T.codigo
-where T.codigo is null
-order by a.versao, a.nome;
+/*
+Lista de alunos e eletivas cursadas (ordenadas por horas)
+Quantidade de eletivas que podem ser usadas como optativas (grade 2023/2)
+*/
+select T.matricula, count(*) as qtd, sum(T.horas) as total_horas
+from (
+select vdc.*, row_number() over(partition by vdc.matricula order by vdc.matricula asc, vdc.horas desc) as sequencia
+from vw_disciplinas_cursadas vdc
+where vdc.tipo ='Eletiva'  and (vdc.situacao = 1 or vdc.situacao = 8 or vdc.situacao = 7)) T
+where T.sequencia <= 2
+group by T.matricula
 
-/*----------------------------------------------------------------------------------
- Lista de matrículas e qtd de disciplinas obrigatórias que ainda faltam ser cursadas
- ----------------------------------------------------------------------------------*/
-select a.matricula, count(*) as qtd
-from vw_disciplinas d
-inner join vw_alunos_ativos a on a.versao = d.versao and d.tipo = 'Obrigatória'
-left join (
-select h.*
-from vw_itens_historico h
-where (h.situacao = 1 or h.situacao = 7 or h.situacao = 8 or h.situacao = 11) 
-and h.tipo = 'Obrigatória') T on a.matricula = T.matricula and d.versao = T.versao and d.codigo = T.codigo
-where T.codigo is null
-group by a.matricula;
+/*
+Alunos que cursaram CD1 ou CD2 na EP
+*/
+select vih.*
+from vw_itens_historico vih 
+inner join vw_alunos_ativos vaa on vih.matricula = vaa.matricula
+where (vih.codigo = 'TMT0001' or vih.codigo = 'TMT0002') and (vih.situacao = 1 or vih.situacao = 7 or vih.situacao = 8 or vih.situacao = 11)
+order by vih.matricula
 
----------------------
+/*
+Jubilamento:
+- Aluno sem inscrições no período atual com 4 trancamentos (ABANDONO)
+- Limites: 12 períodos + trancamentos + extensão + pandemia
+-   16 períodos sem extensão
+-   17 períodos com 1 período de extensão
+-   18 períodos com 2 períodos de extensão
+- Aluno não formado onde período atual > período limite (PRAZO)
+*/
 
-with
-HISTORICO as (
-select h.*
-from vw_itens_historico h
-inner join vw_alunos_ativos a on a.matricula = h.matricula
-left join vw_disciplinas d on h.versao = d.versao  and h.codigo = d.codigo
-where (h.situacao = 1 or h.situacao = 7 or h.situacao = 8 or h.situacao = 11)
-)
-select * from (
-select h.matricula, h.codigo, h.nome, h.horas, row_number() over (partition by h.matricula order by h.horas desc) as seq
-from HISTORICO h
-where h.tipo is null) T 
-where T.seq <= 2
-order by T.matricula, T.seq
+/*
+HorasEletivas(eletivasCursadas, eletivasMatriculadas)
+cursadas = pegar máximo 2 com as maiores cargas horárias de eletivasCursadas
+
+se cursadas.qtd = 2 e cursadas.horas >= 120
+  retorna 120
+  
+total = eletivasCursadas + eletivasMatriculadas
+
+validas = pegar máximo 2 com as maiores cargas horárias de total
+
+retornar max(120, validas.horas)
+*/
+
+/*
+Grade 2023.2
+IOB IOP IEL / NOB HOP ELC / TOB
+
+Formandos: NOB >= TOB && (HOP >= 600 || (HOP >= 480 && HOP + HorasEletivas(ELC, IEL) >= 600))
+
+Inscrições OK
+- Matriculadas >= 3
+- Formado: OK
+- Formando: OK
+- 1 ou 2: NOB + IOB >= TOB && (HOP + IOP + horasEletivas(HEL, IEL) >= 600)
+
+Inscrições NÃO OK
+- Matriculadas < 3
+- Não Formado
+- Não formando: NOB + IOB < TOB || (HOP + IOP + horasEletivas(HEL, IEL) < 600)
+*/
+
