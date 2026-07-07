@@ -20,3 +20,7 @@ sealed interface IDAO<T: EntityDTO> {
     interface IItemDiarioDAO: IDAO<ItemDiarioDTO>
     interface IItemHistoricoDAO: IDAO<ItemHistoricoDTO>
 }
+
+interface IDataDAO {
+    fun runProc(storedProc: String)
+}

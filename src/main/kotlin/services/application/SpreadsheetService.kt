@@ -7,7 +7,7 @@ import model.*
 import services.domain.spreadsheet.Spreadsheet
 
 enum class Operation {
-    ALUNO, DADOS_ALUNO, HISTORICO, INSCRICAO, DISCIPLINA, DIARIO, PRE_REQUISITO, LIST
+    ALUNO, DADOS_ALUNO, HISTORICO, INSCRICAO, DISCIPLINA, DIARIO, PRE_REQUISITO, STOREDPROC, LIST
 }
 
 private fun <T> String.transform(block: String.() -> T): T? = if (this == "NULL" || this.isEmpty() || this.isBlank() ) null else this.block()
@@ -20,7 +20,7 @@ private fun String.toPeriodo() = if (this[0].isDigit()) this[0].digitToInt() els
 
 class SpreadsheetService(val spreadSheet: Spreadsheet) {
 
-    fun import(operation: Operation, repo: IRepository<out Entity>?, delete: Boolean, sep: String, depto: String) {
+    fun import(operation: Operation, repo: IRepository<out Entity>?, delete: Boolean, sep: String, depto: String, storedProcs: List<String>) {
         if (delete && repo != null && operation != Operation.DADOS_ALUNO) {
             repo.deleteAll()
         }
@@ -40,6 +40,10 @@ class SpreadsheetService(val spreadSheet: Spreadsheet) {
                     if (disciplinas.any { disciplina -> disciplina.codigo == itemDiario.codigo })
                         (repo as ItemDiarioRepository).batchInsert(itemDiario)
                 }
+            }
+            Operation.STOREDPROC -> {
+                val dataRepo = DataRepository()
+                storedProcs.forEach { dataRepo.runProc(it) }
             }
             Operation.LIST -> spreadSheet.readAsSequence()
                 .forEach { line ->

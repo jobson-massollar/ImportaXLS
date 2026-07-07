@@ -1,10 +1,9 @@
 package services.domain.persistence
 
-import kotlin.reflect.KClass
-
 interface IDAOFactory {
-    fun <T:IDAO<*>> get(c: KClass<in T>): T
+//    fun <T:IDAO<*>> get(c: KClass<in T>): T
     fun <T : IDAO<*>> getDAO(t: DAOFactory.Type): T
+    fun getDataDAO(): IDataDAO
 }
 
 object DAOFactory: IDAOFactory {
@@ -16,9 +15,11 @@ object DAOFactory: IDAOFactory {
         this.factory = factory
     }
 
-    override fun <T : IDAO<*>> get(c: KClass<in T>): T =
-        factory?.get(c) ?: throw NullPointerException("DAO Factory not set")
+//    override fun <T : IDAO<*>> get(c: KClass<in T>): T =
+//        factory?.get(c) ?: throw NullPointerException("DAO Factory not set")
 
     override fun <T : IDAO<*>> getDAO(t: Type): T  =
         factory?.getDAO(t) ?: throw NullPointerException("DAO Factory not set")
+
+    override fun getDataDAO() = factory?.getDataDAO() ?: throw NullPointerException("DAO Factory not set")
 }

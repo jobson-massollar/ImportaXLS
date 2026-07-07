@@ -12,5 +12,6 @@ fun main(args: Array<String>) = App()
         PreRequisitos(),
         Inscricao(),
         Diario(),
+        StoredProc(),
         Lista())
     .main(args)
